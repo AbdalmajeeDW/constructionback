@@ -5,11 +5,11 @@ import { join } from 'path';
 import { AppModule } from './app.module';
 import { seedAdmin } from './seeds/admin.seed';
 import { DataSource } from 'typeorm';
+import 'dotenv/config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // 🌐 CORS (production + dev)
   app.enableCors({
     origin: [
       'http://localhost:3000',
@@ -22,7 +22,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // 📁 static files
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
@@ -31,7 +30,6 @@ async function bootstrap() {
   app.useBodyParser('json', { limit: '10mb' });
   app.useBodyParser('urlencoded', { extended: true, limit: '10mb' });
 
-  // 🔒 validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -40,12 +38,10 @@ async function bootstrap() {
     }),
   );
 
-  // ⚠️ seed فقط في development (مهم جدًا)
   if (process.env.NODE_ENV !== 'production') {
     await seedAdmin(app);
   }
 
-  // 🚀 port من environment
   const port = process.env.PORT || 4000;
 
   await app.listen(port);
