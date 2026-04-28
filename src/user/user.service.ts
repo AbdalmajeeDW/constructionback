@@ -1,0 +1,91 @@
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { User } from './entities/user.entity';
+import { RegisterDto } from '../auth/dto/register.dto';
+
+@Injectable()
+export class UserService {
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
+
+  // ✅ تعديل هذه الدالة -最重要的是
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password') // 👈 هذا السطر هو الحل
+      .where('user.email = :email', { email })
+      .getOne();
+  }
+
+  // ✅ تعديل هذه الدالة أيضاً
+  async findById(id: number): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id },
+      select: [
+        'id',
+        'firstName',
+        'lastName',
+        'email',
+        'role',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
+  }
+
+  async create(registerDto: RegisterDto): Promise<User> {
+    const existingUser = await this.findByEmail(registerDto.email);
+    if (existingUser) {
+      throw new ConflictException('User already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    const user = this.userRepository.create({
+      ...registerDto,
+      password: hashedPassword,
+      role: registerDto.role || 'admin',
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    // إزالة كلمة المرور من الرد
+    const { password, ...result } = savedUser;
+    return result as User;
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.userRepository.find({
+      select: [
+        'id',
+        'firstName',
+        'lastName',
+        'email',
+        'role',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
+  }
+
+  async update(id: number, data: Partial<User>) {
+    await this.userRepository.update(id, data);
+    return this.findById(id);
+  }
+
+  async delete(id: number) {
+    const result = await this.userRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('User not found');
+    }
+    return { message: 'User deleted successfully' };
+  }
+}
