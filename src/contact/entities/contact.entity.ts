@@ -35,7 +35,7 @@ export class Contact {
   @Column({ type: 'text' })
   space!: string;
 
-  @Column({ type: 'boolean' })
+  @Column({default: false})
   isRead!: boolean;
 
   @Column({ type: 'simple-array', nullable: true })
