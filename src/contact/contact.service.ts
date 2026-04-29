@@ -16,50 +16,66 @@ export class ContactService {
     private contactRepository: Repository<Contact>,
     private readonly mailService: MailService,
   ) {}
+async createContact(data: CreateContactDto, imagePaths: string[]) {
+  try {
+    const contact = this.contactRepository.create({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
 
-  async createContact(data: CreateContactDto, imagePaths: string[]) {
+      // 📍 Address fields (NEW)
+      postcode: data.postcode,
+      straat: data.straat,
+      nr: data.nr,
+      plaats: data.plaats,
+
+      message: data.message,
+      space: data.space,
+
+      images: imagePaths,
+      status: data.status ?? "pending",
+      isRead: false,
+    });
+
+    const savedContact = await this.contactRepository.save(contact);
+
+    // 📧 Email sending (non-blocking)
     try {
-      const contact = this.contactRepository.create({
+      await this.mailService.sendContactEmail({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         phone: data.phone,
-        location: data.location,
-        houseNumber: data.houseNumber,
+
+        postcode: data.postcode,
+        straat: data.straat,
+        nr: data.nr,
+        plaats: data.plaats,
+
         message: data.message,
         space: data.space,
+
         images: imagePaths,
-        status: data.status,
+        contactId: savedContact.id,
       });
-
-      const savedContact = await this.contactRepository.save(contact);
-
-      try {
-        await this.mailService.sendContactEmail({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          message: data.message,
-          houseNumber: data.houseNumber,
-          images: imagePaths,
-          contactId: savedContact.id,
-          location: data.location,
-          phone: data.phone,
-
-          space: data.space,
-        });
-      } catch (emailError) {}
-
-      return {
-        success: true,
-        message: 'تم إرسال رسالتك بنجاح',
-        data: savedContact,
-      };
-    } catch (error) {
-      console.error('Error saving contact:', error);
-      throw new BadRequestException('فشل حفظ البيانات: ' + error);
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
     }
+
+    return {
+      success: true,
+      message: "تم إرسال رسالتك بنجاح",
+      data: savedContact,
+    };
+  } catch (error) {
+    console.error("Error saving contact:", error);
+
+    throw new BadRequestException(
+      "" + (error || error),
+    );
   }
+}
 
   async getAllContacts() {
     return await this.contactRepository.find({

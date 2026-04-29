@@ -6,18 +6,24 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class MailService {
   constructor(private readonly mailerService: MailerService) { }
 
-  async sendContactEmail(data: {
-    firstName: string;
-    lastName: string;
-    phone: string;
-    email: string;
-    location: string;
-    space: string;
-    message: string;
-    houseNumber: string;
-    images?: string[];
-    contactId?: number;
-  }) {
+  async sendContactEmail(data:{
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+
+  postcode: string;
+  straat: string;
+  nr: string;
+  plaats: string;
+
+  space: number;
+  message: string;
+
+  houseNumber?: string; 
+  images?: string[];
+  contactId?: number;
+}) {
 
     try {
       const result = await this.mailerService.sendMail({
@@ -53,7 +59,7 @@ export class MailService {
                 
                 <div class="info-box">
                   <h3 style="color: #0d9488;">📍 العنوان:</h3>
-                  <p><strong>الشارع:</strong> ${data.location}</p>
+                  <p><strong>الشارع:</strong> ${data.postcode + data.nr}</p>
                   <p><strong>رقم المنزل:</strong> ${data.houseNumber}</p>
                 </div>
                 
@@ -85,13 +91,12 @@ export class MailService {
           </body>
           </html>
         `,
-        // نسخة نصية للإيميل (للعملاء الذين لا يدعمون HTML)
         text: `
           رسالة جديدة من ${data.firstName + data.lastName}
           
           الاسم: ${data.firstName + data.lastName}
           البريد: ${data.email}
-          العنوان: ${data.location} - ${data.houseNumber}
+          العنوان: ${data.postcode + data.nr}
           
           الرسالة:
           ${data.message}

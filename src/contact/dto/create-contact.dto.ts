@@ -5,9 +5,12 @@ import {
   IsOptional,
   IsArray,
   IsBoolean,
-} from 'class-validator';
+  IsNumber,
+  Matches,
+} from "class-validator";
 
 export class CreateContactDto {
+  // 👤 Personal Info
   @IsString()
   @IsNotEmpty()
   firstName!: string;
@@ -16,35 +19,56 @@ export class CreateContactDto {
   @IsNotEmpty()
   lastName!: string;
 
-  @IsString()
-  @IsNotEmpty()
-  phone!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  location!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  space!: string;
-
   @IsEmail()
   @IsNotEmpty()
   email!: string;
 
   @IsString()
   @IsNotEmpty()
-  houseNumber!: string;
-  @IsBoolean()
+  phone!: string;
+
+
+  @IsString()
   @IsNotEmpty()
-  isRead!: string;
+  @Matches(/^\d{4}\s?[A-Z]{2}$/, {
+    message: "Invalid postcode format (1234 AB)",
+  })
+  postcode!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  straat!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  nr!: string;
+
+
+
+  @IsString()
+  @IsNotEmpty()
+  plaats!: string;
+
+  // 📐 Project info
+  @IsNumber()
+  @IsNotEmpty()
+  space!: number;
+
   @IsString()
   @IsNotEmpty()
   message!: string;
-  @IsString()
-  @IsNotEmpty()
-  status!: string;
+
+  // 🖼️ Images
   @IsArray()
   @IsOptional()
   images?: string[];
+
+  // 📊 System fields
+  @IsBoolean()
+  @IsOptional()
+  isRead?: boolean;
+
+  @IsString()
+  @IsOptional()
+  status?: string;
 }

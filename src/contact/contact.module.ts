@@ -9,9 +9,9 @@ import { MailModule } from '../mail/mail.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Contact]),
-    MailModule, // استيراد MailModule
+    MailModule, 
   ],
   controllers: [ContactController],
-  providers: [ContactService], // MailService يأتي من MailModule
+  providers: [ContactService], 
 })
 export class ContactModule {}
