@@ -24,17 +24,20 @@ export class ContactController {
   constructor(private readonly contactService: ContactService) {}
  @Post()
   @Post()
- @UseInterceptors(
+@UseInterceptors(
   FilesInterceptor('images', 1000, {
     storage: diskStorage({
       destination: './uploads/contacts',
       filename: (req, file, callback) => {
-        const uniqueSuffix =
-          Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         const ext = extname(file.originalname);
         callback(null, `${uniqueSuffix}${ext}`);
       },
     }),
+    limits: {
+      fileSize: 50 * 1024 * 1024, 
+      files: 1000, 
+    },
   }),
 )
   async createContact(

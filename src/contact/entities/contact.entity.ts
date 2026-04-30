@@ -25,8 +25,8 @@ export class Contact {
   phone!: string;
 
   // 📍 Address (Dutch format)
-  @Column({ type: "varchar", length: 10 })
-  postcode!: string; // 1234 AB
+@Column({ type: 'varchar', length: 20, default: '' })
+postcode!: string;
 
   @Column({ type: "varchar", length: 150 })
   straat!: string;
