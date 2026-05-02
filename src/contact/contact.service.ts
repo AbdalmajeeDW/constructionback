@@ -145,8 +145,10 @@ export class ContactService {
   if (contact.images && contact.images.length > 0) {
     for (const image of contact.images) {
       try {
-        const filePath = path.join(process.cwd(), image); 
-
+const filePath = path.join(
+  process.cwd(),
+  image.startsWith('/') ? image.slice(1) : image,
+);
         if (existsSync(filePath)) {
           unlinkSync(filePath);
         }

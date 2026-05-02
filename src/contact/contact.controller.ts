@@ -12,11 +12,13 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
+
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ContactService } from './contact.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
+
 import sharp from 'sharp';
 import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import * as path from 'path';
@@ -41,6 +43,12 @@ export class ContactController {
         fileSize: 5 * 1024 * 1024,
         files: 5,
       },
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return callback(new Error('Only images are allowed'), false);
+        }
+        callback(null, true);
+      },
     }),
   )
   async createContact(
@@ -55,20 +63,34 @@ export class ContactController {
       mkdirSync(outputDir, { recursive: true });
     }
 
-    for (const file of files || []) {
-      const inputPath = file.path; // ✅ هذا مهم جداً
-      const fileName = `compressed-${Date.now()}-${Math.random().toString(36).slice(2)}.webp`;
-      const outputPath = path.join(outputDir, fileName);
+    // 🚀 معالجة الصور بشكل متوازي (أسرع بكثير)
+    await Promise.all(
+      (files || []).map(async (file) => {
+        const inputPath = file.path;
 
-      await sharp(inputPath)
-        .resize(1200)
-        .webp({ quality: 70 })
-        .toFile(outputPath);
+        const fileName = `compressed-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}.webp`;
 
-      unlinkSync(inputPath);
+        const outputPath = path.join(outputDir, fileName);
 
-      finalPaths.push(`/${outputPath}`);
-    }
+        await sharp(inputPath)
+          .resize(1200, 1200, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .webp({
+            quality: 75,
+            effort: 1,
+          })
+          .toFile(outputPath);
+
+        // 🧹 حذف الملف الأصلي
+        unlinkSync(inputPath);
+
+        finalPaths.push(`/${outputPath}`);
+      }),
+    );
 
     return this.contactService.createContact(body, finalPaths);
   }
