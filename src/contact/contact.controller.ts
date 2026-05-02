@@ -29,7 +29,7 @@ export class ContactController {
 
   @Post()
   @UseInterceptors(
-    FilesInterceptor('images', 5, {
+    FilesInterceptor('images', 20, {
       storage: diskStorage({
         destination: './uploads/temp',
         filename: (req, file, callback) => {
