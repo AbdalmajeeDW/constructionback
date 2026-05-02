@@ -7,19 +7,22 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact } from './entities/contact.entity';
 import { MailService } from '../mail/mail.service';
-import { CreateContactDto } from '../contact/dto/create-contact.dto';
-
+import { CreateContactDto } from './dto/create-contact.dto';
+import { unlinkSync, existsSync } from 'fs';
+import * as path from 'path';
 @Injectable()
 export class ContactService {
   constructor(
     @InjectRepository(Contact)
-    private contactRepository: Repository<Contact>,
+    private readonly contactRepository: Repository<Contact>,
     private readonly mailService: MailService,
   ) {}
 
+
   async createContact(data: CreateContactDto, imagePaths: string[]) {
     try {
-      // 1️⃣ حفظ البيانات في قاعدة البيانات
+      console.log('🔥 START REQUEST');
+
       const contact = this.contactRepository.create({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -35,13 +38,37 @@ export class ContactService {
         space: data.space,
 
         images: imagePaths,
-        status: data.status ?? "pending",
+        status: data.status ?? 'pending',
         isRead: false,
       });
-console.log("🔥 START REQUEST");
 
       const savedContact = await this.contactRepository.save(contact);
-console.log("✅ AFTER DB SAVE");
+
+      console.log('✅ AFTER DB SAVE');
+
+      this.sendEmailAsync(data, imagePaths, savedContact.id);
+
+      return {
+        success: true,
+        message: 'تم إرسال رسالتك بنجاح',
+        data: savedContact,
+      };
+    } catch (error) {
+      console.error('❌ Error saving contact:', error);
+
+      throw new BadRequestException(
+        'حدث خطأ أثناء حفظ البيانات، حاول مرة أخرى لاحقًا',
+      );
+    }
+  }
+
+
+  private sendEmailAsync(
+    data: CreateContactDto,
+    imagePaths: string[],
+    contactId: number,
+  ) {
+    setImmediate(() => {
       this.mailService
         .sendContactEmail({
           firstName: data.firstName,
@@ -58,33 +85,23 @@ console.log("✅ AFTER DB SAVE");
           space: data.space,
 
           images: imagePaths,
-          contactId: savedContact.id,
+          contactId,
         })
-        .catch((emailError) => {
-          console.error("📧 Email failed (ignored):", emailError.message);
+        .catch((err) => {
+          console.error('📧 Email failed (background):', err?.message || err);
         });
-      return {
-        success: true,
-        message: "تم إرسال رسالتك بنجاح",
-        data: savedContact,
-      };
-
-    } catch (error) {
-      console.error("❌ Error saving contact:", error);
-
-      throw new BadRequestException(
-        "حدث خطأ أثناء حفظ البيانات، حاول مرة أخرى لاحقًا"
-      );
-    }
+    });
   }
 
+
   async getAllContacts() {
-    return await this.contactRepository.find({
+    return this.contactRepository.find({
       order: {
         createdAt: 'DESC',
       },
     });
   }
+
 
   async getContactById(id: number) {
     const contact = await this.contactRepository.findOne({
@@ -98,66 +115,94 @@ console.log("✅ AFTER DB SAVE");
     return contact;
   }
 
-  async putContactById(id: number) {
-    const contact = await this.contactRepository.findOne({
-      where: { id },
-    });
 
-    if (!contact) {
-      throw new NotFoundException('الرسالة غير موجودة');
-    }
+  async putContactById(id: number) {
+    const contact = await this.getContactById(id);
 
     contact.isRead = true;
     const savedContact = await this.contactRepository.save(contact);
 
-    return {
-      savedContact,
-    };
+    return { savedContact };
   }
+
 
   async updateContactStatus(id: number, status: string) {
     const contact = await this.getContactById(id);
+
     contact.status = status;
-    await this.contactRepository.save(contact);
-    return contact;
+    return this.contactRepository.save(contact);
   }
 
-  async deleteContact(id: string) {
-    const result = await this.contactRepository.delete(id);
+ async deleteContact(id: string) {
+  const contact = await this.contactRepository.findOne({
+    where: { id: Number(id) },
+  });
 
-    if (result.affected === 0) {
-      throw new NotFoundException('الرسالة غير موجودة');
+  if (!contact) {
+    throw new NotFoundException('الرسالة غير موجودة');
+  }
+
+  if (contact.images && contact.images.length > 0) {
+    for (const image of contact.images) {
+      try {
+        const filePath = path.join(process.cwd(), image); 
+
+        if (existsSync(filePath)) {
+          unlinkSync(filePath);
+        }
+      } catch (err) {
+        console.error('❌ Failed to delete image:', image, err);
+      }
     }
-
-    return { success: true, message: 'تم حذف الرسالة بنجاح' };
   }
+
+  await this.contactRepository.delete(id);
+
+  return {
+    success: true,
+    message: 'تم حذف الرسالة مع الصور بنجاح',
+  };
+}
 
   async getContactStats() {
-    const total = await this.contactRepository.count();
-    const pending = await this.contactRepository.count({
-      where: { status: 'pending' },
-    });
-    const read = await this.contactRepository.count({
-      where: { status: 'read' },
-    });
-    const replied = await this.contactRepository.count({
-      where: { status: 'replied' },
-    });
+    const [total, pending, read, replied] = await Promise.all([
+      this.contactRepository.count(),
+      this.contactRepository.count({ where: { status: 'pending' } }),
+      this.contactRepository.count({ where: { status: 'read' } }),
+      this.contactRepository.count({ where: { status: 'replied' } }),
+    ]);
 
-    return { total, pending, read, replied };
+    return {
+      total,
+      pending,
+      read,
+      replied,
+    };
   }
+
 
   async searchContacts(keyword: string) {
     if (!keyword || keyword.trim() === '') {
-      return await this.getAllContacts();
+      return this.getAllContacts();
     }
 
-    return await this.contactRepository
+    return this.contactRepository
       .createQueryBuilder('contact')
-      .where('contact.name LIKE :keyword', { keyword: `%${keyword}%` })
-      .orWhere('contact.email LIKE :keyword', { keyword: `%${keyword}%` })
-      .orWhere('contact.message LIKE :keyword', { keyword: `%${keyword}%` })
-      .orWhere('contact.street LIKE :keyword', { keyword: `%${keyword}%` })
+      .where('contact.firstName LIKE :keyword', {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere('contact.lastName LIKE :keyword', {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere('contact.email LIKE :keyword', {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere('contact.message LIKE :keyword', {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere('contact.straat LIKE :keyword', {
+        keyword: `%${keyword}%`,
+      })
       .orderBy('contact.createdAt', 'DESC')
       .getMany();
   }
