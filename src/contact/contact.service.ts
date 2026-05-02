@@ -38,9 +38,10 @@ export class ContactService {
         status: data.status ?? "pending",
         isRead: false,
       });
+console.log("🔥 START REQUEST");
 
       const savedContact = await this.contactRepository.save(contact);
-
+console.log("✅ AFTER DB SAVE");
       this.mailService
         .sendContactEmail({
           firstName: data.firstName,
@@ -62,7 +63,6 @@ export class ContactService {
         .catch((emailError) => {
           console.error("📧 Email failed (ignored):", emailError.message);
         });
-
       return {
         success: true,
         message: "تم إرسال رسالتك بنجاح",

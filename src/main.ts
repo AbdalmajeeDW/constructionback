@@ -26,8 +26,8 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
-  app.useBodyParser('json', { limit: '100mb' });
-  app.useBodyParser('urlencoded', { extended: true, limit: '10mb' });
+  app.useBodyParser('json', { limit: '5mb' });
+  app.useBodyParser('urlencoded', { extended: true, limit: '5mb' });
 
   app.useGlobalPipes(
     new ValidationPipe({
