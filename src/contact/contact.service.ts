@@ -21,7 +21,6 @@ export class ContactService {
 
   async createContact(data: CreateContactDto, imagePaths: string[]) {
     try {
-      console.log('🔥 START REQUEST');
 
       const contact = this.contactRepository.create({
         firstName: data.firstName,

@@ -9,6 +9,8 @@ export async function seedAdmin(app: INestApplication) {
   const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
 
   const plainPassword = process.env.ADMIN_PASSWORD || "Abd#9xL$2mP@5nQ&8";
+    const secondUserPassword = process.env.SECOND_USER_PASSWORD || "Abdul2026!?";
+
   
   if (!plainPassword) {
     throw new Error('ADMIN_PASSWORD is not defined in environment variables');
@@ -32,6 +34,20 @@ export async function seedAdmin(app: INestApplication) {
     });
     
     await userRepo.save(admin);
-  } else {
+  } 
+    const existingUser = await userRepo.findOne({
+    where: { email: 'secondUser@example.com' }, 
+  });
+
+  if (!existingUser) {
+    const hashedPassword = await bcrypt.hash(secondUserPassword, 10);
+    const user = userRepo.create({
+      firstName: 'Abd',
+      lastName: 'ul',
+      email: 'info@amoklusbedrijf.nl',
+      password: hashedPassword,
+      role: 'admin', 
+    });
+    await userRepo.save(user);
   }
 }
