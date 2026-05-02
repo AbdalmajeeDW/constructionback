@@ -1,4 +1,3 @@
-// mail/mail.service.ts
 import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 
@@ -26,7 +25,7 @@ export class MailService {
 }) {
 
     try {
-      const result = await this.mailerService.sendMail({
+      const result =  this.mailerService.sendMail({
         from: `"Rivo Website" <info@rivoaannemerbedrijf.nl>`,
         to: 'info@rivoaannemerbedrijf.nl',
         subject: `📬 رسالة جديدة من ${data.firstName + data.lastName} - موقع البناء`,
@@ -105,12 +104,6 @@ export class MailService {
           معرّف الرسالة: ${data.contactId}
         `,
       });
-
-      console.log('✅ Email sent successfully!');
-      console.log('📧 Message ID:', result.messageId);
-      console.log('🔗 Preview URL:', result.messageId);
-
-      return { success: true, messageId: result.messageId };
     } catch (error) {
   console.error('❌ Email failed (non-blocking):', error );
 
