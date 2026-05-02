@@ -108,12 +108,13 @@ export class MailService {
 
       console.log('✅ Email sent successfully!');
       console.log('📧 Message ID:', result.messageId);
-      console.log('🔗 Preview URL:', result.messageId); // لـ Ethereal ستحصل على رابط معاينة
+      console.log('🔗 Preview URL:', result.messageId);
 
       return { success: true, messageId: result.messageId };
     } catch (error) {
-      console.error('❌ Error sending email:', error);
-      throw new Error('Failed to send email: ' + error);
-    }
+  console.error('❌ Email failed (non-blocking):', error );
+
+  return { success: false };
+}
   }
 }
