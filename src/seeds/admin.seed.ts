@@ -36,7 +36,7 @@ export async function seedAdmin(app: INestApplication) {
     await userRepo.save(admin);
   } 
     const existingUser = await userRepo.findOne({
-    where: { email: 'secondUser@example.com' }, 
+    where: { email: 'info@amoklusbedrijf.nl' }, 
   });
 
   if (!existingUser) {
