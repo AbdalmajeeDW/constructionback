@@ -3,7 +3,6 @@ import 'dotenv/config';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ContactModule } from './contact/contact.module';
-import { MailModule } from './mail/mail.module';
 import { Contact } from './contact/entities/contact.entity';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
@@ -24,7 +23,6 @@ port: parseInt(process.env.DB_PORT || '3306', 10),
 }),
     AuthModule,
     UserModule,
-    MailModule,
     ContactModule,
   ],
 })

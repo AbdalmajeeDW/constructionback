@@ -63,7 +63,6 @@ export class ContactController {
       mkdirSync(outputDir, { recursive: true });
     }
 
-    // 🚀 معالجة الصور بشكل متوازي (أسرع بكثير)
     await Promise.all(
       (files || []).map(async (file) => {
         const inputPath = file.path;
@@ -85,7 +84,6 @@ export class ContactController {
           })
           .toFile(outputPath);
 
-        // 🧹 حذف الملف الأصلي
         unlinkSync(inputPath);
 
         finalPaths.push(`/${outputPath}`);

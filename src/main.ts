@@ -37,9 +37,9 @@ async function bootstrap() {
     }),
   );
 
-  if (process.env.NODE_ENV !== 'production') {
-    await seedAdmin(app);
-  }
+ 
+    // await seedAdmin(app);
+  
 
   const port = process.env.PORT || 4000;
 

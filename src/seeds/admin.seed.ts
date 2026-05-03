@@ -8,46 +8,38 @@ import { INestApplication } from '@nestjs/common';
 export async function seedAdmin(app: INestApplication) {
   const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
 
-  const plainPassword = process.env.ADMIN_PASSWORD || "Abd#9xL$2mP@5nQ&8";
-    const secondUserPassword = process.env.SECOND_USER_PASSWORD || "Abdul2026!?";
+  const plainPassword =
+    process.env.ADMIN_PASSWORD || "Abd#9xL$2mP@5nQ&8";
 
-  
+  const secondUserPassword =
+    process.env.SECOND_USER_PASSWORD || "Abdul2026!?";
+
   if (!plainPassword) {
-    throw new Error('ADMIN_PASSWORD is not defined in environment variables');
+    throw new Error('ADMIN_PASSWORD is not defined');
   }
 
-  
-  const existingAdmin = await userRepo.findOne({
-    where: { email: 'adminAbd@admin.com' }, 
-  });
+  const adminPasswordHash = await bcrypt.hash(plainPassword, 10);
+  const userPasswordHash = await bcrypt.hash(secondUserPassword, 10);
 
-  if (!existingAdmin) {
-    
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
-    
-    const admin = userRepo.create({
+  await userRepo.upsert(
+    {
       firstName: 'Super',
       lastName: 'Admin',
       email: 'adminAbd@admin.com',
-      password: hashedPassword,
+      password: adminPasswordHash,
       role: 'admin',
-    });
-    
-    await userRepo.save(admin);
-  } 
-    const existingUser = await userRepo.findOne({
-    where: { email: 'info@amoklusbedrijf.nl' }, 
-  });
+    },
+    ['email']
+  );
 
-  if (!existingUser) {
-    const hashedPassword = await bcrypt.hash(secondUserPassword, 10);
-    const user = userRepo.create({
+  await userRepo.upsert(
+    {
       firstName: 'Abd',
       lastName: 'ul',
       email: 'info@amoklusbedrijf.nl',
-      password: hashedPassword,
-      role: 'admin', 
-    });
-    await userRepo.save(user);
-  }
+      password: userPasswordHash,
+      role: 'admin',
+    },
+    ['email']
+  );
 }

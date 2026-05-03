@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact } from './entities/contact.entity';
-import { MailService } from '../mail/mail.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { unlinkSync, existsSync } from 'fs';
 import * as path from 'path';
@@ -15,7 +14,7 @@ export class ContactService {
   constructor(
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
-    private readonly mailService: MailService,
+  
   ) {}
 
 
@@ -43,9 +42,7 @@ export class ContactService {
 
       const savedContact = await this.contactRepository.save(contact);
 
-      console.log('✅ AFTER DB SAVE');
 
-      this.sendEmailAsync(data, imagePaths, savedContact.id);
 
       return {
         success: true,
@@ -62,35 +59,7 @@ export class ContactService {
   }
 
 
-  private sendEmailAsync(
-    data: CreateContactDto,
-    imagePaths: string[],
-    contactId: number,
-  ) {
-    setImmediate(() => {
-      this.mailService
-        .sendContactEmail({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.phone,
 
-          postcode: data.postcode,
-          straat: data.straat,
-          nr: data.nr,
-          plaats: data.plaats,
-
-          message: data.message,
-          space: data.space,
-
-          images: imagePaths,
-          contactId,
-        })
-        .catch((err) => {
-          console.error('📧 Email failed (background):', err?.message || err);
-        });
-    });
-  }
 
 
   async getAllContacts() {
