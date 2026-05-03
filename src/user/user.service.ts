@@ -40,26 +40,27 @@ export class UserService {
   }
 
 async create(registerDto: RegisterDto): Promise<User> {
+  const existingUser = await this.userRepository.findOne({
+    where: { email: registerDto.email },
+  });
+
+  if (existingUser) {
+    throw new ConflictException('Email already exists');
+  }
+
   const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-  try {
-    const user = this.userRepository.create({
-      ...registerDto,
-      password: hashedPassword,
-      role: registerDto.role || 'admin',
-    });
+  const user = this.userRepository.create({
+    ...registerDto,
+    password: hashedPassword,
+    role: registerDto.role ?? 'admin', // 
+  });
 
-    const savedUser = await this.userRepository.save(user);
+  const savedUser = await this.userRepository.save(user);
 
-    const { password, ...result } = savedUser;
-    return result as User;
+  const { password, ...result } = savedUser;
 
-  } catch (error) {
-    if ((error as any).code === 'ER_DUP_ENTRY') {
-      throw new ConflictException('Email already exists');
-    }
-    throw error;
-  }
+  return result as User;
 }
 
   async findAll(): Promise<User[]> {
