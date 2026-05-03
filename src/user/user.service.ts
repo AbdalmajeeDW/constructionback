@@ -16,16 +16,14 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  // ✅ تعديل هذه الدالة -最重要的是
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository
       .createQueryBuilder('user')
-      .addSelect('user.password') // 👈 هذا السطر هو الحل
+      .addSelect('user.password') 
       .where('user.email = :email', { email })
       .getOne();
   }
 
-  // ✅ تعديل هذه الدالة أيضاً
   async findById(id: number): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id },
@@ -41,14 +39,10 @@ export class UserService {
     });
   }
 
-  async create(registerDto: RegisterDto): Promise<User> {
-    const existingUser = await this.findByEmail(registerDto.email);
-    if (existingUser) {
-      throw new ConflictException('User already exists');
-    }
+async create(registerDto: RegisterDto): Promise<User> {
+  const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
+  try {
     const user = this.userRepository.create({
       ...registerDto,
       password: hashedPassword,
@@ -57,10 +51,16 @@ export class UserService {
 
     const savedUser = await this.userRepository.save(user);
 
-    // إزالة كلمة المرور من الرد
     const { password, ...result } = savedUser;
     return result as User;
+
+  } catch (error) {
+    if ((error as any).code === 'ER_DUP_ENTRY') {
+      throw new ConflictException('Email already exists');
+    }
+    throw error;
   }
+}
 
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
