@@ -49,10 +49,6 @@ export class CreateContactDto {
   @IsNotEmpty()
   plaats!: string;
 
-  // 📐 Project info
-  @IsNumber()
-  @IsNotEmpty()
-  space!: number;
 
   @IsString()
   @IsNotEmpty()

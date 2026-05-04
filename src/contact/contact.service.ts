@@ -33,7 +33,6 @@ export class ContactService {
         plaats: data.plaats,
 
         message: data.message,
-        space: data.space,
 
         images: imagePaths,
         status: data.status ?? 'pending',

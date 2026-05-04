@@ -39,9 +39,6 @@ postcode!: string;
   @Column({ type: "varchar", length: 100 })
   plaats!: string;
 
-  // 📐 Project info
-  @Column({ type: "float" })
-  space!: number;
 
   @Column({ type: "text" })
   message!: string;
